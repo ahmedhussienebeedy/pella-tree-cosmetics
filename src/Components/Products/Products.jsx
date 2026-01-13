@@ -1,19 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { database } from "../../firebase";
 import { ref, onValue } from "firebase/database";
 import { useCart } from "../context/CartContext";
 import { FaShoppingCart } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom"; // <--- استدعاء useNavigate
+import { useNavigate } from "react-router-dom";
 
 export default function Products() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(null); // null عشان نقدر نعمل skeleton
   const [search, setSearch] = useState("");
   const { cart, addToCart, decreaseQuantity, totalPrice } = useCart();
   const [showCartPopup, setShowCartPopup] = useState(false);
-  const navigate = useNavigate(); // <--- هنا
+  const navigate = useNavigate();
 
   useEffect(() => {
+    // جرب الأول تجيب المنتجات من localStorage
+    const cached = localStorage.getItem("products");
+    if (cached) setProducts(JSON.parse(cached));
+
+    // جلب البيانات من Firebase
     const productsRef = ref(database, "products");
     const unsubscribe = onValue(productsRef, snapshot => {
       const data = snapshot.val();
@@ -21,13 +26,18 @@ export default function Products() {
         ? Object.keys(data).map(key => ({ id: key, ...data[key] }))
         : [];
       setProducts(formatted);
+      localStorage.setItem("products", JSON.stringify(formatted)); // تخزين نسخة للكاش
     });
+
     return () => unsubscribe();
   }, []);
 
-  const filtered = search
-    ? products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
-    : products;
+  const filtered = useMemo(() => {
+    if (!products) return [];
+    return search
+      ? products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+      : products;
+  }, [products, search]);
 
   const handleAddToCart = (product) => {
     addToCart(product);
@@ -73,7 +83,12 @@ export default function Products() {
 
         {/* Products grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filtered.length > 0 ? (
+          {products === null ? (
+            // Skeleton loading
+            Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-gray-200 animate-pulse rounded-2xl h-64"></div>
+            ))
+          ) : filtered.length > 0 ? (
             filtered.map(p => (
               <motion.div
                 key={p.id}
@@ -140,7 +155,7 @@ export default function Products() {
               <button
                 className="flex-1 bg-green-600 text-white py-2 rounded-xl hover:bg-green-700 transition"
                 onClick={() => {
-                  navigate("/cart"); 
+                  navigate("/cart");
                   setShowCartPopup(false);
                 }}
               >
