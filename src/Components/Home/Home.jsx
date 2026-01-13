@@ -2,6 +2,7 @@ import AnimatedGradientBackground from "../Animated Background/Animated Backgrou
 import fourth from "../../assets/images/4.jpg"
 import fifth from "../../assets/images/5.jpg"
 import sixth from "../../assets/images/6.jpg"
+import Products from "../Products/Products";
 
 export default function Home() {
   return (
@@ -23,9 +24,11 @@ export default function Home() {
               استكشف المنتجات
             </button>
           </a>
+
+
         </div>
       </div>
-
+    <Products/>
       {/* قسم الفيديو */}
       <section className="py-16 bg-white flex justify-center">
         <div className="backdrop-blur-xl bg-pink-50/60 p-4 rounded-3xl shadow-2xl shadow-pink-400/40 hover:scale-105 transition duration-500">
