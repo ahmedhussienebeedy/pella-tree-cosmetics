@@ -7,18 +7,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 export default function Products() {
-  const [products, setProducts] = useState(null); // null عشان نقدر نعمل skeleton
+  const [products, setProducts] = useState(null);
   const [search, setSearch] = useState("");
   const { cart, addToCart, decreaseQuantity, totalPrice } = useCart();
   const [showCartPopup, setShowCartPopup] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // جرب الأول تجيب المنتجات من localStorage
     const cached = localStorage.getItem("products");
     if (cached) setProducts(JSON.parse(cached));
 
-    // جلب البيانات من Firebase
     const productsRef = ref(database, "products");
     const unsubscribe = onValue(productsRef, snapshot => {
       const data = snapshot.val();
@@ -26,7 +24,7 @@ export default function Products() {
         ? Object.keys(data).map(key => ({ id: key, ...data[key] }))
         : [];
       setProducts(formatted);
-      localStorage.setItem("products", JSON.stringify(formatted)); // تخزين نسخة للكاش
+      localStorage.setItem("products", JSON.stringify(formatted));
     });
 
     return () => unsubscribe();
@@ -39,82 +37,84 @@ export default function Products() {
       : products;
   }, [products, search]);
 
-  const handleAddToCart = (product) => {
-    addToCart(product);
-    setShowCartPopup(true);
-  };
-
-  const handleIncrease = (product) => addToCart(product);
-  const handleDecrease = (productId) => decreaseQuantity(productId);
-
   const bubbles = [
-    { size: 80, top: "10%", left: "5%", delay: 0 },
-    { size: 100, top: "20%", left: "80%", delay: 2 },
-    { size: 60, top: "50%", left: "30%", delay: 1 },
-    { size: 90, top: "70%", left: "60%", delay: 3 },
-    { size: 50, top: "80%", left: "15%", delay: 0.5 },
+    { size: 120, top: "10%", left: "10%", delay: 0 },
+    { size: 90, top: "25%", left: "75%", delay: 2 },
+    { size: 70, top: "60%", left: "30%", delay: 1 },
+    { size: 110, top: "75%", left: "60%", delay: 3 },
   ];
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-r from-purple-400 via-pink-300 to-yellow-200 overflow-hidden p-6">
+    <div className="relative min-h-screen bg-gradient-to-br from-purple-500 via-pink-400 to-yellow-300 overflow-hidden p-6">
+<div className="mt-16">
 
-      {/* Background bubbles */}
-      <div className="absolute top-0 left-0 w-full h-full">
-        {bubbles.map((b, i) => (
-          <motion.div
-            key={i}
-            className="absolute bg-white rounded-full opacity-30"
-            style={{ width: `${b.size}px`, height: `${b.size}px`, top: b.top, left: b.left }}
-            animate={{ y: [0, -50, 0] }}
-            transition={{ duration: 6, repeat: Infinity, repeatType: "loop", delay: b.delay }}
-          />
-        ))}
-      </div>
+      {/* Animated bubbles */}
+      {bubbles.map((b, i) => (
+        <motion.div
+          key={i}
+          className="absolute bg-white/30 rounded-full blur-xl"
+          style={{ width: b.size, height: b.size, top: b.top, left: b.left }}
+          animate={{ y: [0, -40, 0], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 8, repeat: Infinity, delay: b.delay }}
+        />
+      ))}
 
-      {/* Search */}
-      <div className="relative z-10 mt-20">
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto">
+
+        {/* Search */}
         <input
           type="text"
           placeholder="ابحث عن المنتجات..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border p-3 rounded-full w-full max-w-sm mb-8 shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="bg-white/70 backdrop-blur-md border border-white/50 p-3 rounded-full w-full max-w-sm mb-10 shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-400"
         />
 
-        {/* Products grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {/* Products Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+
           {products === null ? (
-            // Skeleton loading
             Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-gray-200 animate-pulse rounded-2xl h-64"></div>
+              <div key={i} className="bg-white/40 animate-pulse rounded-3xl h-72 backdrop-blur"></div>
             ))
           ) : filtered.length > 0 ? (
             filtered.map(p => (
               <motion.div
                 key={p.id}
-                className="bg-white rounded-2xl shadow-lg p-4 flex flex-col relative hover:scale-105 transition-transform duration-300"
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.06, rotate: 0.3 }}
+                className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl p-4 flex flex-col relative transition-all"
               >
                 <img
                   src={p.image}
                   alt={p.name}
-                  className="w-full h-44 object-cover rounded-xl mb-3"
+                  className="w-full h-44 object-cover rounded-2xl mb-3 shadow-md"
                 />
-                <h3 className="font-semibold text-lg">{p.name}</h3>
-                <p className="text-gray-500 text-sm line-clamp-2">{p.description}</p>
-                <p className="mt-2 font-bold text-blue-600">EGP{p.price}</p>
+
+                <h3 className="font-bold text-lg text-purple-700">{p.name}</h3>
+                <p className="text-gray-600 text-sm line-clamp-2">{p.description}</p>
+
+                <p className="mt-2 font-bold text-pink-600 text-lg">
+                  EGP {p.price}
+                </p>
 
                 <button
-                  onClick={() => handleAddToCart(p)}
-                  className="absolute bottom-3 right-3 bg-blue-600 text-white p-1 rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+                  onClick={() => {
+                    addToCart(p);
+                    setShowCartPopup(true);
+                  }}
+                  className="absolute bottom-3 right-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-1 rounded-full shadow-lg hover:scale-110 transition flex items-center gap-1"
                 >
-                  <FaShoppingCart /> اضف الي السلة
+                  <FaShoppingCart /> أضف
                 </button>
               </motion.div>
             ))
           ) : (
-            <p className="col-span-full text-center text-gray-600 mt-10">لا توجد منتجات.</p>
+            <p className="col-span-full text-center text-white text-xl mt-10 drop-shadow">
+              لا توجد منتجات
+            </p>
           )}
+
         </div>
       </div>
 
@@ -122,55 +122,58 @@ export default function Products() {
       <AnimatePresence>
         {showCartPopup && (
           <motion.div
-            className="fixed bottom-6 right-6 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 p-4"
-            initial={{ opacity: 0, y: 50 }}
+            className="fixed bottom-6 right-6 w-80 bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 z-50 p-4"
+            initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
+            exit={{ opacity: 0, y: 60 }}
           >
-            <h3 className="font-bold text-lg mb-2">سلة مشترياتك</h3>
-            <div className="max-h-48 overflow-y-auto mb-4 space-y-2">
+            <h3 className="font-bold text-lg mb-3 text-purple-700">سلة مشترياتك</h3>
+
+            <div className="max-h-48 overflow-y-auto space-y-2 mb-4">
               {cart.map(item => (
-                <div key={item.id} className="flex justify-between items-center bg-gray-50 p-2 rounded-xl shadow-sm">
-                  <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded-lg" />
-                  <div className="flex-1 flex flex-col ml-2">
-                    <span className="font-semibold">{item.name}</span>
-                    <span className="text-sm text-gray-600">EGP{item.price * item.quantity}</span>
+                <div key={item.id} className="flex items-center gap-2 bg-white/60 rounded-xl p-2 shadow">
+                  <img src={item.image} className="w-12 h-12 rounded-lg object-cover" />
+                  <div className="flex-1">
+                    <p className="font-semibold">{item.name}</p>
+                    <p className="text-sm text-gray-600">
+                      EGP {item.price * item.quantity}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleDecrease(item.id)}
-                      className="bg-red-500 text-white px-2 rounded hover:bg-red-600"
-                    >-</button>
+                    <button onClick={() => decreaseQuantity(item.id)} className="bg-pink-500 text-white px-2 rounded">-</button>
                     <span>{item.quantity}</span>
-                    <button
-                      onClick={() => handleIncrease(item)}
-                      className="bg-green-500 text-white px-2 rounded hover:bg-green-600"
-                    >+</button>
+                    <button onClick={() => addToCart(item)} className="bg-purple-500 text-white px-2 rounded">+</button>
                   </div>
                 </div>
               ))}
             </div>
-            <p className="font-semibold mb-4">الإجمالي: EGP {totalPrice}</p>
+
+            <p className="font-semibold mb-4 text-pink-600">
+              الإجمالي: EGP {totalPrice}
+            </p>
+
             <div className="flex gap-2">
               <button
-                className="flex-1 bg-green-600 text-white py-2 rounded-xl hover:bg-green-700 transition"
                 onClick={() => {
                   navigate("/cart");
                   setShowCartPopup(false);
                 }}
+                className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white py-2 rounded-xl hover:scale-105 transition"
               >
-                شراء الطلب
+                إتمام الطلب
               </button>
+
               <button
-                className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-xl hover:bg-gray-300 transition"
                 onClick={() => setShowCartPopup(false)}
+                className="flex-1 bg-white/70 py-2 rounded-xl hover:bg-white transition"
               >
-                مواصلة التسوق
+                متابعة
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+</div>
     </div>
   );
 }

@@ -1,37 +1,31 @@
 import AnimatedGradientBackground from "../Animated Background/Animated Background";
-import fourth from "../../assets/images/4.jpg"
-import fifth from "../../assets/images/5.jpg"
-import sixth from "../../assets/images/6.jpg"
+import fourth from "../../assets/images/4.jpg";
+import fifth from "../../assets/images/5.jpg";
+import sixth from "../../assets/images/6.jpg";
 import Products from "../Products/Products";
 
 export default function Home() {
   return (
     <>
-      {/* قسم الهيرو */}
+      {/* HERO */}
       <div className="relative w-full min-h-screen flex flex-col items-center justify-center text-center overflow-hidden">
         <AnimatedGradientBackground />
 
-        <div className="z-10 px-4">
-          <h1 className="text-4xl sm:text-6xl font-bold text-white mb-4">
-           Pella Tree مرحباً بكم في 
+        <div className="z-10 px-4 backdrop-blur-md bg-white/10 rounded-3xl p-8 shadow-2xl">
+          <h1 className="text-4xl sm:text-6xl font-bold text-white mb-4 drop-shadow">
+            مرحباً بكم في Pella Tree
           </h1>
           <p className="text-lg sm:text-xl text-white/90 max-w-2xl mx-auto mb-6">
             اكتشفوا مستحضرات التجميل الفاخرة، منتجات العناية الطبيعية، وكل ما تحتاجونه لتتألقوا بثقة.
           </p>
-
-          <a href="/about">
-            <button className="px-6 py-3 bg-pink-600 hover:bg-pink-700 transition rounded-full text-white font-semibold shadow-lg">
-              استكشف المنتجات
-            </button>
-          </a>
-
-
         </div>
       </div>
-    <Products/>
-      {/* قسم الفيديو */}
-      <section className="py-16 bg-white flex justify-center">
-        <div className="backdrop-blur-xl bg-pink-50/60 p-4 rounded-3xl shadow-2xl shadow-pink-400/40 hover:scale-105 transition duration-500">
+
+      <Products />
+
+      {/* VIDEO */}
+      <section className="py-16 bg-gradient-to-br from-pink-100 via-white to-purple-100 flex justify-center">
+        <div className="backdrop-blur-xl bg-white/50 p-4 rounded-3xl shadow-2xl shadow-pink-400/40 hover:scale-105 transition duration-500">
           <iframe
             src="https://www.facebook.com/plugins/video.php?height=476&href=https%3A%2F%2Fweb.facebook.com%2Freel%2F1397028400779889%2F&show_text=false&width=267&t=0"
             width="320"
@@ -46,9 +40,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* عن مستحضرات التجميل */}
-      <section className="py-16 bg-white text-center px-4">
-        <h2 className="text-3xl font-bold text-pink-600 mb-4">
+      {/* ABOUT */}
+      <section className="py-16 bg-gradient-to-r from-white via-pink-50 to-white text-center px-4">
+        <h2 className="text-3xl font-bold text-pink-600 mb-4 drop-shadow">
           عن مستحضراتنا
         </h2>
         <p className="text-gray-600 max-w-3xl mx-auto">
@@ -56,71 +50,49 @@ export default function Home() {
         </p>
       </section>
 
-      {/* صور المنتجات */}
-      <section className="py-16 bg-pink-50">
+      {/* IMAGES */}
+      <section className="py-16 bg-gradient-to-br from-pink-100 to-purple-100">
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 px-4">
-          <img
-            src={fourth}
-            className="rounded-xl shadow-lg object-cover h-64 w-full hover:scale-105 transition"
-            alt="مستحضرات التجميل"
-          />
-          <img
-            src={fifth}
-            className="rounded-xl shadow-lg object-cover h-64 w-full hover:scale-105 transition"
-            alt="مكياج"
-          />
-          <img
-            src={sixth}
-            className="rounded-xl shadow-lg object-cover h-64 w-full hover:scale-105 transition"
-            alt="جمال"
-          />
+          {[fourth, fifth, sixth].map((img, i) => (
+            <img
+              key={i}
+              src={img}
+              className="rounded-xl shadow-xl bg-white/60 backdrop-blur object-cover h-64 w-full hover:scale-105 transition"
+              alt="product"
+            />
+          ))}
         </div>
       </section>
 
-      {/* لماذا تختارنا */}
-      <section className="py-16 bg-white">
+      {/* WHY US */}
+      <section className="py-16 bg-gradient-to-r from-white via-purple-50 to-white">
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-center px-4">
-          <div className="p-6 rounded-xl shadow hover:shadow-lg transition">
-            <h3 className="text-xl font-semibold text-pink-600 mb-2">
-              مكونات طبيعية
-            </h3>
-            <p className="text-gray-600">
-              تركيبات آمنة لجميع أنواع البشرة.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-xl shadow hover:shadow-lg transition">
-            <h3 className="text-xl font-semibold text-pink-600 mb-2">
-              جودة عالية
-            </h3>
-            <p className="text-gray-600">
-              منتجات عالية الجودة موثوق بها من قبل المحترفين.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-xl shadow hover:shadow-lg transition">
-            <h3 className="text-xl font-semibold text-pink-600 mb-2">
-              جمال بأسعار مناسبة
-            </h3>
-            <p className="text-gray-600">
-              مستحضرات فاخرة بأسعار ودودة.
-            </p>
-          </div>
+          {[
+            { title: "مكونات طبيعية", desc: "تركيبات آمنة لجميع أنواع البشرة." },
+            { title: "جودة عالية", desc: "منتجات موثوق بها من قبل المحترفين." },
+            { title: "أسعار مناسبة", desc: "جمال فاخر بأسعار ودودة." },
+          ].map((item, i) => (
+            <div
+              key={i}
+              className="p-6 rounded-xl bg-white/70 backdrop-blur-md shadow-lg hover:scale-105 transition"
+            >
+              <h3 className="text-xl font-semibold text-pink-600 mb-2">
+                {item.title}
+              </h3>
+              <p className="text-gray-600">{item.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      <section className="py-20 bg-gradient-to-r from-pink-500 to-purple-600 text-center text-white">
-        <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-
+      {/* FOOTER CTA */}
+      <section className="py-20 bg-gradient-to-r from-pink-400 via-white to-purple-400 text-center text-white">
+        <h2 className="text-3xl sm:text-4xl font-bold mb-4 drop-shadow">
+          جمالك يبدأ من هنا
         </h2>
-        <p className="mb-6 text-lg">
-          ابدأ رحلة جمالك  اليوم...Pella Tree
+        <p className="mb-6 text-lg text-white/90">
+          ابدأ رحلة جمالك اليوم مع Pella Tree
         </p>
-        <a href="/products">
-          <button className="px-8 py-3 bg-white text-pink-600 font-semibold rounded-full hover:scale-105 transition shadow-lg">
-            تسوق الآن
-          </button>
-        </a>
       </section>
     </>
   );
