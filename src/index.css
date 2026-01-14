@@ -6,3 +6,19 @@
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
+
+
+.animate-scale {
+  animation: scaleIn 0.4s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
