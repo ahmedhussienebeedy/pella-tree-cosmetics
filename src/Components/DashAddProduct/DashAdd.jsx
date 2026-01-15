@@ -4,40 +4,50 @@ import { ref as dbRef, push } from "firebase/database";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { motion } from "framer-motion";
 
-export default function DashAdd() {
+export default function DashAdd({ onNewProduct }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [imageFile, setImageFile] = useState(null);
-  const [imageURLInput, setImageURLInput] = useState("");
   const [price, setPrice] = useState("");
   const [uploading, setUploading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!imageFile && !imageURLInput)
-      return alert("من فضلك اختر صورة أو أدخل رابط صورة");
+    if (!imageFile) return alert("من فضلك اختر صورة");
 
     try {
       setUploading(true);
 
-      let finalImageURL = imageURLInput;
-      if (imageFile) {
-        const imgRef = storageRef(storage, `products/${Date.now()}_${imageFile.name}`);
-        await uploadBytes(imgRef, imageFile);
-        finalImageURL = await getDownloadURL(imgRef);
-      }
+      // رفع الصورة على Firebase Storage
+      const imgRef = storageRef(storage, `products/${Date.now()}_${imageFile.name}`);
+      await uploadBytes(imgRef, imageFile);
 
-      await push(dbRef(database, "products"), {
+      // الحصول على URL مباشر للعرض
+      const finalImageURL = await getDownloadURL(imgRef);
+
+      // إضافة المنتج في Database
+      const newProductRef = await push(dbRef(database, "products"), {
         name,
         description,
         price: Number(price),
         image: finalImageURL,
       });
 
+      const newProduct = {
+        id: newProductRef.key,
+        name,
+        description,
+        price: Number(price),
+        image: finalImageURL,
+      };
+
+      // تحديث الـ Products state فورًا
+      if (onNewProduct) onNewProduct(newProduct);
+
+      // إعادة ضبط الفورم
       setName("");
       setDescription("");
       setImageFile(null);
-      setImageURLInput("");
       setPrice("");
 
       alert("تم إضافة المنتج بنجاح ✅");
@@ -81,21 +91,12 @@ export default function DashAdd() {
           required
         />
 
-        <label className="text-gray-600 text-sm">رفع صورة من الجهاز (اختياري)</label>
+        <label className="text-gray-600 text-sm">رفع صورة من الجهاز</label>
         <input
           type="file"
           accept="image/*"
           onChange={(e) => setImageFile(e.target.files[0])}
           className="border p-2 rounded-xl"
-        />
-
-        <label className="text-gray-600 text-sm">أو ضع رابط الصورة</label>
-        <input
-          type="text"
-          placeholder="https://example.com/image.jpg"
-          value={imageURLInput}
-          onChange={(e) => setImageURLInput(e.target.value)}
-          className="border p-3 rounded-xl text-right focus:ring-2 focus:ring-green-400 outline-none"
         />
 
         <input

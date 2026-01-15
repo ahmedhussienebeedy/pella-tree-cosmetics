@@ -1,35 +1,32 @@
-// src/Components/Products/Products.jsx
 import { useEffect, useState, useMemo } from "react";
 import { database } from "../../firebase";
 import { ref, onValue } from "firebase/database";
 import { useCart } from "../context/CartContext";
 import { FaShoppingCart } from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 export default function Products() {
-  const [products, setProducts] = useState(null);
+  const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const { cart, addToCart, decreaseQuantity, totalPrice } = useCart();
-  const [showCartSidebar, setShowCartSidebar] = useState(false);
-  const navigate = useNavigate();
 
+  // تحميل المنتجات من الـ database
   useEffect(() => {
-    const cached = localStorage.getItem("products");
-    if (cached) setProducts(JSON.parse(cached));
-
     const productsRef = ref(database, "products");
-    const unsubscribe = onValue(productsRef, snapshot => {
+    const unsubscribe = onValue(productsRef, (snapshot) => {
       const data = snapshot.val();
       const formatted = data
         ? Object.keys(data).map(key => ({ id: key, ...data[key] }))
         : [];
       setProducts(formatted);
-      localStorage.setItem("products", JSON.stringify(formatted));
     });
-
     return () => unsubscribe();
   }, []);
+
+  // لتحديث الصفحة فورًا عند إضافة منتج جديد من DashAdd
+  const handleNewProduct = (newProduct) => {
+    setProducts((prev) => [...prev, newProduct]);
+  };
 
   const filtered = useMemo(() => {
     if (!products) return [];
@@ -38,120 +35,53 @@ export default function Products() {
       : products;
   }, [products, search]);
 
-  const bubbles = [
-    { size: 120, top: "10%", left: "10%", delay: 0 },
-    { size: 90, top: "25%", left: "75%", delay: 2 },
-    { size: 70, top: "60%", left: "30%", delay: 1 },
-    { size: 110, top: "75%", left: "60%", delay: 3 },
-  ];
-
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-purple-500 via-pink-400 to-yellow-300 overflow-hidden p-6">
+    <div dir="rtl" className="p-6 bg-gradient-to-br from-purple-500 via-pink-400 to-yellow-300 min-h-screen">
 
-      {/* Animated bubbles */}
-      {bubbles.map((b, i) => (
-        <motion.div
-          key={i}
-          className="absolute bg-white/30 rounded-full blur-xl"
-          style={{ width: b.size, height: b.size, top: b.top, left: b.left }}
-          animate={{ y: [0, -40, 0], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 8, repeat: Infinity, delay: b.delay }}
-        />
-      ))}
+      {/* بحث */}
+      <input
+        type="text"
+        placeholder="ابحث عن المنتجات..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="bg-white/70 backdrop-blur-md border p-3 rounded-full w-full max-w-sm mb-6 focus:outline-none focus:ring-2 focus:ring-pink-400"
+      />
 
-      {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto mt-16">
-
-        {/* Search */}
-        <input
-          type="text"
-          placeholder="ابحث عن المنتجات..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="bg-white/70 backdrop-blur-md border border-white/50 p-3 rounded-full w-full max-w-sm mb-10 shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-400"
-        />
-
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {products === null ? (
-            Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-white/40 animate-pulse rounded-3xl h-72 backdrop-blur"></div>
-            ))
-          ) : filtered.length > 0 ? (
-            filtered.map(p => (
-              <motion.div
-                key={p.id}
-                whileHover={{ scale: 1.06, rotate: 0.3 }}
-                className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl p-4 flex flex-col relative transition-all"
-              >
-                <img
-                  src={p.image}
-                  alt={p.name}
-                  className="w-full h-44 object-cover rounded-2xl mb-3 shadow-md"
-                />
-                <h3 className="font-bold text-lg text-purple-700">{p.name}</h3>
-                <p className="text-gray-600 text-sm line-clamp-2">{p.description}</p>
-                <p className="mt-2 font-bold text-pink-600 text-lg">EGP {p.price}</p>
-
-                <button
-                  onClick={() => { addToCart(p); setShowCartSidebar(true); }}
-                  className="absolute bottom-3 right-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-1 rounded-full shadow-lg hover:scale-110 transition flex items-center gap-1"
-                >
-                  <FaShoppingCart /> أضف
-                </button>
-              </motion.div>
-            ))
-          ) : (
-            <p className="col-span-full text-center text-white text-xl mt-10 drop-shadow">
-              لا توجد منتجات
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Cart Sidebar */}
-      <AnimatePresence>
-        {showCartSidebar && (
-          <motion.div
-            className="fixed top-0 right-0 h-full w-96 bg-white/90 backdrop-blur-xl shadow-2xl border-l border-gray-200 z-50 p-6 flex flex-col"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "tween" }}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-2xl text-purple-700">سلة مشترياتك</h3>
-              <button onClick={() => setShowCartSidebar(false)} className="text-gray-500 text-2xl">&times;</button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto space-y-3">
-              {cart.map(item => (
-                <div key={item.id} className="flex items-center gap-3 bg-white rounded-xl p-2 shadow">
-                  <img src={item.image} className="w-12 h-12 rounded-lg object-cover" />
-                  <div className="flex-1">
-                    <p className="font-semibold">{item.name}</p>
-                    <p className="text-sm text-gray-600">EGP {item.price * item.quantity}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => decreaseQuantity(item.id)} className="bg-pink-500 text-white px-2 rounded">-</button>
-                    <span>{item.quantity}</span>
-                    <button onClick={() => addToCart(item)} className="bg-purple-500 text-white px-2 rounded">+</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <p className="font-semibold mb-4 text-pink-600 mt-4">الإجمالي: EGP {totalPrice}</p>
-
-            <button
-              onClick={() => { navigate("/cart"); setShowCartSidebar(false); }}
-              className="bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-xl hover:scale-105 transition"
+      {/* شبكة المنتجات */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {products.length === 0 ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-white/40 animate-pulse rounded-3xl h-64"></div>
+          ))
+        ) : filtered.length > 0 ? (
+          filtered.map(p => (
+            <motion.div
+              key={p.id}
+              className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl p-4 flex flex-col relative"
+              whileHover={{ scale: 1.05 }}
             >
-              إتمام الطلب
-            </button>
-          </motion.div>
+              <img
+                src={p.image}
+                alt={p.name}
+                className="w-full h-44 object-cover rounded-2xl mb-3"
+              />
+              <h3 className="font-bold text-lg text-purple-700">{p.name}</h3>
+              <p className="text-gray-600 text-sm line-clamp-2">{p.description}</p>
+              <p className="mt-2 font-bold text-pink-600 text-lg ms-auto">EGP {p.price}</p>
+              <button
+                onClick={() => addToCart(p)}
+                className="absolute bottom-3 right-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-1 rounded-full shadow-lg hover:scale-110 transition flex items-center gap-1"
+              >
+                <FaShoppingCart /> أضف
+              </button>
+            </motion.div>
+          ))
+        ) : (
+          <p className="col-span-full text-center text-white text-xl mt-10 drop-shadow">
+            لا توجد منتجات
+          </p>
         )}
-      </AnimatePresence>
+      </div>
     </div>
   );
 }
