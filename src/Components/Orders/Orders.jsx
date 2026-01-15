@@ -1,98 +1,78 @@
 // src/Components/Dashboard/Orders.jsx
 import { useEffect, useState } from "react";
 import { database } from "../../firebase";
-import { ref, onValue } from "firebase/database";
-import { getAuth } from "firebase/auth";
+import { ref, onValue, update } from "firebase/database";
 import { motion } from "framer-motion";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
-  const auth = getAuth();
 
   useEffect(() => {
-    if (!auth.currentUser) return;
-
-    const ordersRef = ref(database, `orders/${auth.currentUser.uid}`);
+    const ordersRef = ref(database, "ordersAll");
     const unsubscribe = onValue(ordersRef, (snapshot) => {
       const data = snapshot.val();
-      const formatted = data
-        ? Object.keys(data).map((key) => ({ id: key, ...data[key] }))
-        : [];
-      setOrders(formatted.reverse());
+      const formatted = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+      formatted.sort((a,b) => b.orderNumber - a.orderNumber);
+      setOrders(formatted);
     });
-
     return () => unsubscribe();
-  }, [auth.currentUser]);
+  }, []);
+
+  const changeStatus = (id, status) => {
+    update(ref(database, `ordersAll/${id}`), { status });
+  };
 
   return (
     <div dir="rtl" className="p-6 bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen">
-      <h2 className="text-3xl font-bold mb-8 text-gray-800 text-center">
-        الطلبات الواردة
-      </h2>
+      <h2 className="text-3xl font-bold mb-8 text-center">لوحة الطلبات</h2>
 
       {orders.length === 0 ? (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-gray-600 text-center"
-        >
-          لا يوجد طلبات حتى الآن
-        </motion.p>
+        <p className="text-center text-gray-600">لا يوجد طلبات حتى الآن</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {orders.map((order) => (
-            <motion.div
-              key={order.id}
-              initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.4 }}
-              whileHover={{ scale: 1.03, y: -5 }}
-              className="bg-white rounded-3xl shadow-xl p-5 flex flex-col"
-            >
-              {/* Header */}
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="font-bold text-lg text-gray-800">
-                  {order.user}
-                </h3>
-                <span className="text-sm text-gray-500">
-                  {new Date(order.date).toLocaleDateString("ar-EG")}
-                </span>
+          {orders.map(order => (
+            <motion.div key={order.id} initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4 }}
+              className="bg-white rounded-3xl shadow-xl p-5 flex flex-col">
+
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-bold text-lg">طلب رقم #{order.orderNumber}</h3>
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">{order.status}</span>
               </div>
 
-              {/* Info */}
-              <div className="space-y-1 text-gray-600 text-sm">
-                <p><span className="font-semibold">الهاتف:</span> {order.phone}</p>
-                <p><span className="font-semibold">الدولة:</span> {order.country}</p>
-                <p><span className="font-semibold">المدينة:</span> {order.city}</p>
+              <p className="text-sm text-gray-500 mb-2">{new Date(order.date).toLocaleString("ar-EG")}</p>
+
+              <div className="text-sm space-y-1 text-gray-700">
+                <p><b>الاسم:</b> {order.user}</p>
+                <p><b>الهاتف:</b> {order.phone}</p>
+                <p><b>الدولة:</b> {order.country}</p>
+                <p><b>المدينة:</b> {order.city}</p>
+                <p><b>العنوان:</b> {order.address}</p>
               </div>
 
-              {/* Items */}
-              <div className="border-t border-gray-200 pt-3 mt-3">
-                <h4 className="font-semibold text-gray-700 mb-2">
-                  المنتجات:
-                </h4>
+              <div className="border-t mt-3 pt-3">
+                <h4 className="font-semibold mb-2">المنتجات</h4>
                 <ul className="space-y-1 max-h-32 overflow-y-auto text-sm">
-                  {order.items.map((p) => (
-                    <li
-                      key={p.id}
-                      className="flex justify-between text-gray-600"
-                    >
+                  {order.items?.map((p,i) => (
+                    <li key={i} className="flex justify-between">
                       <span>{p.name} × {p.quantity}</span>
-                      <span className="font-semibold">
-                        {p.price * p.quantity} ج
-                      </span>
+                      <span>{(p.price * p.quantity).toFixed(2)} ج</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              {/* Total */}
-              <div className="mt-auto pt-3 border-t border-gray-200 flex justify-between items-center">
-                <span className="font-bold text-gray-800">الإجمالي:</span>
-                <span className="font-bold text-green-600 text-lg">
-                  {order.total} ج
-                </span>
+              <div className="border-t mt-3 pt-3 flex justify-between items-center">
+                <span className="font-bold">الإجمالي</span>
+                <span className="font-bold text-green-600">{order.total.toFixed(2)} ج</span>
               </div>
+
+              <select value={order.status} onChange={(e)=>changeStatus(order.id, e.target.value)} className="mt-3 border p-2 rounded-lg text-sm">
+                <option value="جديد">جديد</option>
+                <option value="قيد التجهيز">قيد التجهيز</option>
+                <option value="تم الشحن">تم الشحن</option>
+                <option value="تم التسليم">تم التسليم</option>
+              </select>
+
             </motion.div>
           ))}
         </div>

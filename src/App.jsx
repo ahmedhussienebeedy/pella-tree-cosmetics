@@ -6,10 +6,9 @@ import About from "./Components/About/About";
 import Login from "./Components/Login/Login";
 import Dashboard from "./Components/Dashboard/Dashboard";
 import DashAdd from "./Components/DashAddProduct/DashAdd";
-import Orders from "./Components/Orders/Orders";
+import Orders from "./Components/Orders/Orders"; // خليه من Dashboard folder
 import Cart from "./Components/Cart/Cart";
-import OrderSuccess from "./Components/OrderSuccess/OrderSuccess";
-
+import OrderSuccess from "./Components/OrderSuccess/OrderSuccess"; // نفس folder ال Cart
 
 const router = createHashRouter([
   {
@@ -20,7 +19,7 @@ const router = createHashRouter([
       { path: "products", element: <Products /> },
       { path: "about", element: <About /> },
       { path: "cart", element: <Cart /> },
-      { path: "order-success", element: <OrderSuccess /> }, // 👈 هنا
+      { path: "order-success", element: <OrderSuccess /> }, 
     ],
   },
   { path: "login", element: <Login /> },
