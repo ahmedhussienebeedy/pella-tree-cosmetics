@@ -15,15 +15,20 @@ export default function DashAdd({ onNewProduct }) {
     e.preventDefault();
     if (!imageFile) return alert("من فضلك اختر صورة");
 
+    if (Number(price) <= 0) return alert("من فضلك أدخل سعر صحيح");
+    if (imageFile.size > 2 * 1024 * 1024)
+      return alert("حجم الصورة كبير جداً، اختار صورة أقل من 2MB");
+
     try {
       setUploading(true);
 
-      // رفع الصورة على Firebase Storage
+      console.log("جاري رفع الصورة...");
       const imgRef = storageRef(storage, `products/${Date.now()}_${imageFile.name}`);
-      await uploadBytes(imgRef, imageFile);
+      const snapshot = await uploadBytes(imgRef, imageFile);
+      console.log("تم رفع الصورة بنجاح!", snapshot);
 
-      // الحصول على URL مباشر للعرض
       const finalImageURL = await getDownloadURL(imgRef);
+      console.log("تم الحصول على رابط الصورة:", finalImageURL);
 
       // إضافة المنتج في Database
       const newProductRef = await push(dbRef(database, "products"), {
@@ -41,7 +46,9 @@ export default function DashAdd({ onNewProduct }) {
         image: finalImageURL,
       };
 
-      // تحديث الـ Products state فورًا
+      console.log("تم إضافة المنتج في Firebase:", newProduct);
+
+      // تحديث الـ Products state فورًا في المكوّن الأب
       if (onNewProduct) onNewProduct(newProduct);
 
       // إعادة ضبط الفورم
@@ -98,6 +105,15 @@ export default function DashAdd({ onNewProduct }) {
           onChange={(e) => setImageFile(e.target.files[0])}
           className="border p-2 rounded-xl"
         />
+
+        {/* Preview للصورة */}
+        {imageFile && (
+          <img
+            src={URL.createObjectURL(imageFile)}
+            alt="Preview"
+            className="w-full h-48 object-cover rounded-xl mb-2"
+          />
+        )}
 
         <input
           type="number"
