@@ -1,41 +1,29 @@
 import { useState } from "react";
-import { database, storage } from "../../firebase";
+import { database } from "../../firebase";
 import { ref as dbRef, push } from "firebase/database";
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { motion } from "framer-motion";
 
 export default function DashAdd({ onNewProduct }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [imageFile, setImageFile] = useState(null);
+  const [imageURL, setImageURL] = useState(""); // رابط الصورة الآن من URL مباشر
   const [price, setPrice] = useState("");
   const [uploading, setUploading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!imageFile) return alert("من فضلك اختر صورة");
-
+    if (!imageURL) return alert("من فضلك ضع رابط صورة صحيح");
     if (Number(price) <= 0) return alert("من فضلك أدخل سعر صحيح");
-    if (imageFile.size > 2 * 1024 * 1024)
-      return alert("حجم الصورة كبير جداً، اختار صورة أقل من 2MB");
 
     try {
       setUploading(true);
 
-      console.log("جاري رفع الصورة...");
-      const imgRef = storageRef(storage, `products/${Date.now()}_${imageFile.name}`);
-      const snapshot = await uploadBytes(imgRef, imageFile);
-      console.log("تم رفع الصورة بنجاح!", snapshot);
-
-      const finalImageURL = await getDownloadURL(imgRef);
-      console.log("تم الحصول على رابط الصورة:", finalImageURL);
-
-      // إضافة المنتج في Database
+      // إضافة المنتج في Database مباشرة برابط الصورة
       const newProductRef = await push(dbRef(database, "products"), {
         name,
         description,
         price: Number(price),
-        image: finalImageURL,
+        image: imageURL,
       });
 
       const newProduct = {
@@ -43,18 +31,15 @@ export default function DashAdd({ onNewProduct }) {
         name,
         description,
         price: Number(price),
-        image: finalImageURL,
+        image: imageURL,
       };
 
-      console.log("تم إضافة المنتج في Firebase:", newProduct);
-
-      // تحديث الـ Products state فورًا في المكوّن الأب
       if (onNewProduct) onNewProduct(newProduct);
 
       // إعادة ضبط الفورم
       setName("");
       setDescription("");
-      setImageFile(null);
+      setImageURL("");
       setPrice("");
 
       alert("تم إضافة المنتج بنجاح ✅");
@@ -98,20 +83,20 @@ export default function DashAdd({ onNewProduct }) {
           required
         />
 
-        <label className="text-gray-600 text-sm">رفع صورة من الجهاز</label>
         <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setImageFile(e.target.files[0])}
-          className="border p-2 rounded-xl"
+          type="text"
+          placeholder="ضع رابط الصورة هنا"
+          value={imageURL}
+          onChange={(e) => setImageURL(e.target.value)}
+          className="border p-3 rounded-xl text-right focus:ring-2 focus:ring-green-400 outline-none"
+          required
         />
 
-        {/* Preview للصورة */}
-        {imageFile && (
+        {imageURL && (
           <img
-            src={URL.createObjectURL(imageFile)}
+            src={imageURL}
             alt="Preview"
-            className="w-full h-48 object-cover rounded-xl mb-2"
+            className="w-full h-48 object-cover rounded-xl mb-2 border-2 border-green-500"
           />
         )}
 
@@ -133,7 +118,7 @@ export default function DashAdd({ onNewProduct }) {
             uploading ? "opacity-50 cursor-not-allowed" : "hover:bg-green-700"
           }`}
         >
-          {uploading ? "جاري الرفع..." : "إضافة المنتج"}
+          {uploading ? "جاري الإضافة..." : "إضافة المنتج"}
         </motion.button>
       </motion.form>
     </div>

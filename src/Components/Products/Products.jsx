@@ -5,6 +5,7 @@ import { ref, onValue } from "firebase/database";
 import { useCart } from "../context/CartContext";
 import { FaShoppingCart } from "react-icons/fa";
 import { motion } from "framer-motion";
+import { fixImageUrl } from "../../utils/fixImageUrl"; // <- هنا استدعينا utility
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -14,7 +15,6 @@ export default function Products() {
   const { cart, addToCart, decreaseQuantity, totalPrice } = useCart();
   const navigate = useNavigate();
 
-  // تحميل المنتجات من Firebase
   useEffect(() => {
     const productsRef = ref(database, "products");
     const unsubscribe = onValue(productsRef, (snapshot) => {
@@ -37,7 +37,7 @@ export default function Products() {
 
   return (
     <div dir="rtl" className="p-6 bg-gradient-to-br from-purple-500 via-pink-400 to-yellow-300 min-h-screen">
-
+      
       {/* بحث */}
       <input
         type="text"
@@ -52,15 +52,15 @@ export default function Products() {
         {filtered.map((p) => (
           <motion.div
             key={p.id}
-            className="bg-white/70 rounded-3xl shadow-2xl p-4 flex flex-col relative"
-            whileHover={{ scale: 1.05 }}
+            className="bg-white/70 rounded-3xl shadow-lg p-4 flex flex-col relative transition duration-300 hover:shadow-2xl"
+            whileHover={{ scale: 1.03 }}
           >
             <img
-              src={p.image}
+              src={fixImageUrl(p.image)} // <- تم تعديل الصورة هنا
               className="w-full h-44 object-cover rounded-2xl mb-3"
             />
             <h3 className="font-bold text-lg text-purple-700">{p.name}</h3>
-            <p className="text-gray-600 text-sm">{p.description}</p>
+            <p className="text-gray-600 text-sm line-clamp-2">{p.description}</p>
             <p className="mt-2 font-bold text-pink-600 text-lg ms-auto">
               EGP {p.price}
             </p>
@@ -71,7 +71,7 @@ export default function Products() {
                 addToCart(p);
                 setOpenCart(true);
               }}
-              className="absolute bottom-3 right-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-1 rounded-full flex items-center gap-1"
+              className="absolute bottom-3 right-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-1 rounded-full flex items-center gap-1 hover:scale-105 transition"
             >
               <FaShoppingCart /> أضف
             </button>
@@ -100,7 +100,7 @@ export default function Products() {
                 className="flex items-center gap-3 bg-gray-100 p-3 rounded-xl"
               >
                 <img
-                  src={item.image}
+                  src={fixImageUrl(item.image)} // <- تعديل الصورة هنا كمان
                   className="w-12 h-12 rounded-lg object-cover"
                 />
 
@@ -132,20 +132,19 @@ export default function Products() {
             الإجمالي: EGP {totalPrice}
           </p>
 
-          {/* زرار الانتقال لصفحة Cart */}
           <button
             onClick={() => {
-              setOpenCart(false); // غلق الـ sidebar
-              navigate("/cart");   // توجيه لصفحة Cart
+              setOpenCart(false);
+              navigate("/cart");
             }}
-            className="mt-3 w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-2 rounded-xl font-bold"
+            className="mt-3 w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-2 rounded-xl font-bold hover:scale-105 transition"
           >
             Go To Cart / Place Order
           </button>
 
           <button
             onClick={() => setOpenCart(false)}
-            className="mt-2 w-full border py-2 rounded-xl"
+            className="mt-2 w-full border py-2 rounded-xl hover:bg-gray-100 transition"
           >
             إغلاق
           </button>
