@@ -6,11 +6,11 @@ export const useCart = () => useContext(CartContext);
 
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false); // 🔥 Sidebar state
 
-  // Load cart from localStorage for guest users (optional)
+  // Load cart from localStorage for guest users
   useEffect(() => {
     const saved = localStorage.getItem("cart");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (saved) setCart(JSON.parse(saved));
   }, []);
 
@@ -18,17 +18,23 @@ export function CartProvider({ children }) {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
+  // 🔥 Add product + open sidebar
   const addToCart = (product) => {
     const existing = cart.find((p) => p.id === product.id);
     if (existing) {
       setCart(
         cart.map((p) =>
-          p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
+          p.id === product.id
+            ? { ...p, quantity: p.quantity + 1 }
+            : p
         )
       );
     } else {
       setCart([...cart, { ...product, quantity: 1 }]);
     }
+
+    // 🔥 افتح السايدبار أول ما يتضاف منتج
+    setIsCartOpen(true);
   };
 
   const removeFromCart = (productId) => {
@@ -42,13 +48,18 @@ export function CartProvider({ children }) {
     } else {
       setCart(
         cart.map((p) =>
-          p.id === productId ? { ...p, quantity: p.quantity - 1 } : p
+          p.id === productId
+            ? { ...p, quantity: p.quantity - 1 }
+            : p
         )
       );
     }
   };
 
-  const totalPrice = cart.reduce((sum, p) => sum + p.price * p.quantity, 0);
+  const totalPrice = cart.reduce(
+    (sum, p) => sum + p.price * p.quantity,
+    0
+  );
 
   return (
     <CartContext.Provider
@@ -59,6 +70,8 @@ export function CartProvider({ children }) {
         decreaseQuantity,
         totalPrice,
         setCart,
+        isCartOpen,      // 🔥 Sidebar state
+        setIsCartOpen,   // 🔥 Control sidebar externally
       }}
     >
       {children}
