@@ -1,12 +1,12 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { database } from "../../firebase";
-import { ref, onValue } from "firebase/database";
+import { ref, query, orderByChild, limitToFirst, onValue } from "firebase/database";
 import { FaShoppingCart, FaTimes } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-/* ---------- Cart Context (local) ---------- */
+/* ---------- Cart Context ---------- */
 const CartContext = React.createContext();
 export const useCart = () => React.useContext(CartContext);
 
@@ -15,7 +15,7 @@ export function CartProvider({ children }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const navigate = useNavigate();
 
-  // load from localStorage
+  // Load cart from localStorage
   useEffect(() => {
     const saved = localStorage.getItem("cart");
     if (saved) setCart(JSON.parse(saved));
@@ -30,9 +30,7 @@ export function CartProvider({ children }) {
     if (existing) {
       setCart(
         cart.map((p) =>
-          p.id === product.id
-            ? { ...p, quantity: p.quantity + 1 }
-            : p
+          p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
         )
       );
     } else {
@@ -69,7 +67,6 @@ export function CartProvider({ children }) {
 
   const totalPrice = cart.reduce((sum, p) => sum + p.price * p.quantity, 0);
 
-  // navigate to CartPage
   const goToCart = () => {
     setIsCartOpen(false);
     navigate("/cart");
@@ -182,9 +179,7 @@ function CartSidebar() {
                   >
                     <div>
                       <p className="font-bold">{item.name}</p>
-                      <p className="text-sm text-gray-500">
-                        EGP {item.price}
-                      </p>
+                      <p className="text-sm text-gray-500">EGP {item.price}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -208,9 +203,7 @@ function CartSidebar() {
 
             {cart.length > 0 && (
               <div className="mt-4 border-t pt-4 flex flex-col gap-2">
-                <p className="font-bold text-lg">
-                  الإجمالي: EGP {totalPrice}
-                </p>
+                <p className="font-bold text-lg">الإجمالي: EGP {totalPrice}</p>
                 <button
                   onClick={goToCart}
                   className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
@@ -251,19 +244,28 @@ export default function Products() {
 function ProductsContent({ products, setProducts, search, setSearch, loading, setLoading }) {
   const { addToCart, setIsCartOpen } = useCart();
 
+  // Load cached products first
   useEffect(() => {
-    const productsRef = ref(database, "products");
+    const saved = localStorage.getItem("products");
+    if (saved) {
+      setProducts(JSON.parse(saved));
+      setLoading(false);
+    }
+  }, [setProducts, setLoading]);
+
+  // Fetch products from Firebase
+  useEffect(() => {
+    const productsQuery = query(ref(database, "products"), orderByChild("name"), limitToFirst(20));
+
     const unsubscribe = onValue(
-      productsRef,
+      productsQuery,
       (snapshot) => {
         setLoading(false);
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const formatted = Object.keys(data).map((key) => ({
-            id: key,
-            ...data[key],
-          }));
+          const formatted = Object.keys(data).map((key) => ({ id: key, ...data[key] }));
           setProducts(formatted);
+          localStorage.setItem("products", JSON.stringify(formatted));
         } else {
           setProducts([]);
         }
@@ -287,9 +289,7 @@ function ProductsContent({ products, setProducts, search, setSearch, loading, se
 
   const filtered = useMemo(() => {
     if (!search) return products;
-    return products.filter((p) =>
-      p.name?.toLowerCase().includes(search.toLowerCase())
-    );
+    return products.filter((p) => p.name?.toLowerCase().includes(search.toLowerCase()));
   }, [products, search]);
 
   return (
@@ -310,12 +310,7 @@ function ProductsContent({ products, setProducts, search, setSearch, loading, se
         {loading
           ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
           : filtered.map((p, index) => (
-              <ProductCard
-                key={p.id}
-                p={p}
-                onAdd={handleAdd}
-                eager={index < 4} // أول صف يظهر فورًا
-              />
+              <ProductCard key={p.id} p={p} onAdd={handleAdd} eager={index < 8} />
             ))}
       </div>
     </div>
