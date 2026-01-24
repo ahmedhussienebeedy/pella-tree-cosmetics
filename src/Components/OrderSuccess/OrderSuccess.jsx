@@ -1,18 +1,26 @@
 // src/Components/Cart/OrderSuccess.jsx
-import { FaCheckCircle } from "react-icons/fa";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function OrderSuccess() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50">
-      <FaCheckCircle className="text-green-500 text-7xl mb-4" />
-      <h2 className="text-2xl font-bold mb-2">تم إرسال الطلب بنجاح</h2>
-      <p className="mb-6 text-gray-600">سيتم التواصل معك قريبًا</p>
-      <button onClick={() => navigate("/products")} className="bg-blue-600 text-white px-6 py-3 rounded-xl">
-        الذهاب للمنتجات
-      </button>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 text-center space-y-4">
+        <h1 className="text-4xl font-bold text-green-600">✅ تم تأكيد الطلب!</h1>
+        <p className="text-lg text-gray-700">
+          شكراً لتسوقك معنا، تم تسجيل طلبك بنجاح.
+        </p>
+      
+        <button
+          onClick={() => navigate("/")}
+          className="mt-4 bg-green-600 text-white py-2 px-6 rounded-xl font-bold hover:bg-green-700 transition"
+        >
+          العودة للصفحة الرئيسية
+        </button>
+     
+      </div>
     </div>
   );
 }

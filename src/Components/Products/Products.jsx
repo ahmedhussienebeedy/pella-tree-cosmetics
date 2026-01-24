@@ -15,7 +15,6 @@ export function CartProvider({ children }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Load cart from localStorage
   useEffect(() => {
     const saved = localStorage.getItem("cart");
     if (saved) setCart(JSON.parse(saved));
@@ -28,11 +27,7 @@ export function CartProvider({ children }) {
   const addToCart = (product) => {
     const existing = cart.find((p) => p.id === product.id);
     if (existing) {
-      setCart(
-        cart.map((p) =>
-          p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
-        )
-      );
+      setCart(cart.map((p) => (p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p)));
     } else {
       setCart([...cart, { ...product, quantity: 1 }]);
     }
@@ -47,25 +42,17 @@ export function CartProvider({ children }) {
     if (existing.quantity === 1) {
       removeFromCart(id);
     } else {
-      setCart(
-        cart.map((p) =>
-          p.id === id ? { ...p, quantity: p.quantity - 1 } : p
-        )
-      );
+      setCart(cart.map((p) => (p.id === id ? { ...p, quantity: p.quantity - 1 } : p)));
     }
   };
 
   const increaseQty = (id) => {
     const existing = cart.find((p) => p.id === id);
     if (!existing) return;
-    setCart(
-      cart.map((p) =>
-        p.id === id ? { ...p, quantity: p.quantity + 1 } : p
-      )
-    );
+    setCart(cart.map((p) => (p.id === id ? { ...p, quantity: p.quantity + 1 } : p)));
   };
 
-  const totalPrice = cart.reduce((sum, p) => sum + p.price * p.quantity, 0);
+  const totalPrice = useMemo(() => cart.reduce((sum, p) => sum + p.price * p.quantity, 0), [cart]);
 
   const goToCart = () => {
     setIsCartOpen(false);
@@ -79,6 +66,7 @@ export function CartProvider({ children }) {
         addToCart,
         decreaseQuantity,
         increaseQty,
+        removeFromCart,
         totalPrice,
         isCartOpen,
         setIsCartOpen,
@@ -91,16 +79,17 @@ export function CartProvider({ children }) {
 }
 
 /* ---------- Product Card ---------- */
-const ProductCard = React.memo(function ProductCard({ p, onAdd, eager }) {
+const ProductCard = React.memo(function ProductCard({ p, onAdd, onImageClick, eager }) {
   return (
     <div className="bg-white/80 rounded-2xl shadow p-4 relative">
       <img
         src={p.image || "/placeholder.png"}
         loading={eager ? "eager" : "lazy"}
-        fetchpriority={eager ? "high" : "auto"}
+        fetchPriority={eager ? "high" : "auto"}
         onError={(e) => (e.target.src = "/placeholder.png")}
-        className="w-full h-40 object-cover rounded-xl mb-2"
+        className="w-full h-40 object-cover rounded-xl mb-2 cursor-pointer"
         alt={p.name}
+        onClick={() => onImageClick(p.image)}
       />
       <h3 className="font-bold text-purple-700">{p.name}</h3>
       <p className="text-sm text-gray-600 line-clamp-2">{p.description}</p>
@@ -131,21 +120,12 @@ function SkeletonCard() {
 
 /* ---------- Cart Sidebar ---------- */
 function CartSidebar() {
-  const {
-    cart,
-    isCartOpen,
-    setIsCartOpen,
-    increaseQty,
-    decreaseQuantity,
-    totalPrice,
-    goToCart,
-  } = useCart();
+  const { cart, isCartOpen, setIsCartOpen, increaseQty, decreaseQuantity, totalPrice, goToCart } = useCart();
 
   return (
     <AnimatePresence>
       {isCartOpen && (
         <>
-          {/* Overlay */}
           <motion.div
             onClick={() => setIsCartOpen(false)}
             className="fixed inset-0 bg-black/40 z-40"
@@ -153,8 +133,6 @@ function CartSidebar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           />
-
-          {/* Sidebar */}
           <motion.div
             className="fixed top-0 right-0 h-full w-80 bg-white z-50 p-4 flex flex-col shadow-xl"
             initial={{ x: "100%" }}
@@ -167,43 +145,30 @@ function CartSidebar() {
                 <FaTimes />
               </button>
             </div>
-
             {cart.length === 0 ? (
               <p className="text-gray-500 text-center mt-8">السلة فاضية</p>
             ) : (
               <div className="flex-1 overflow-y-auto">
                 {cart.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex justify-between items-center mb-4"
-                  >
+                  <div key={item.id} className="flex justify-between items-center mb-4">
                     <div>
                       <p className="font-bold">{item.name}</p>
-                      <p className="text-sm text-gray-500">EGP {item.price}</p>
+                      <p className="text-sm text-gray-500">
+                        {item.price} × {item.quantity} = {(item.price * item.quantity).toFixed(2)} ج
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => decreaseQuantity(item.id)}
-                        className="px-2 bg-gray-200 rounded"
-                      >
-                        -
-                      </button>
+                      <button onClick={() => decreaseQuantity(item.id)} className="px-2 bg-gray-200 rounded">-</button>
                       <span>{item.quantity}</span>
-                      <button
-                        onClick={() => increaseQty(item.id)}
-                        className="px-2 bg-gray-200 rounded"
-                      >
-                        +
-                      </button>
+                      <button onClick={() => increaseQty(item.id)} className="px-2 bg-gray-200 rounded">+</button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-
             {cart.length > 0 && (
               <div className="mt-4 border-t pt-4 flex flex-col gap-2">
-                <p className="font-bold text-lg">الإجمالي: EGP {totalPrice}</p>
+                <p className="font-bold text-lg">الإجمالي: {totalPrice.toFixed(2)} ج</p>
                 <button
                   onClick={goToCart}
                   className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
@@ -219,11 +184,44 @@ function CartSidebar() {
   );
 }
 
+/* ---------- Image Overlay ---------- */
+function ImageOverlay({ src, onClose }) {
+  if (!src) return null;
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      >
+        <motion.img
+          src={src}
+          alt="product"
+          className="max-w-full max-h-full rounded-xl shadow-lg"
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          exit={{ scale: 0.8 }}
+          onClick={(e) => e.stopPropagation()}
+        />
+        <button
+          className="absolute top-4 right-4 text-white text-2xl"
+          onClick={onClose}
+        >
+          <FaTimes />
+        </button>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 /* ---------- Main Products Component ---------- */
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [overlaySrc, setOverlaySrc] = useState(null);
 
   return (
     <CartProvider>
@@ -234,17 +232,18 @@ export default function Products() {
         setSearch={setSearch}
         loading={loading}
         setLoading={setLoading}
+        setOverlaySrc={setOverlaySrc}
       />
       <CartSidebar />
+      <ImageOverlay src={overlaySrc} onClose={() => setOverlaySrc(null)} />
     </CartProvider>
   );
 }
 
 /* ---------- ProductsContent ---------- */
-function ProductsContent({ products, setProducts, search, setSearch, loading, setLoading }) {
+function ProductsContent({ products, setProducts, search, setSearch, loading, setLoading, setOverlaySrc }) {
   const { addToCart, setIsCartOpen } = useCart();
 
-  // Load cached products first
   useEffect(() => {
     const saved = localStorage.getItem("products");
     if (saved) {
@@ -253,7 +252,6 @@ function ProductsContent({ products, setProducts, search, setSearch, loading, se
     }
   }, [setProducts, setLoading]);
 
-  // Fetch products from Firebase
   useEffect(() => {
     const productsQuery = query(ref(database, "products"), orderByChild("name"), limitToFirst(20));
 
@@ -287,30 +285,28 @@ function ProductsContent({ products, setProducts, search, setSearch, loading, se
     [addToCart, setIsCartOpen]
   );
 
+  const handleImageClick = (src) => {
+    setOverlaySrc(src);
+  };
+
   const filtered = useMemo(() => {
     if (!search) return products;
     return products.filter((p) => p.name?.toLowerCase().includes(search.toLowerCase()));
   }, [products, search]);
 
   return (
-    <div
-      dir="rtl"
-      className="p-6 min-h-screen bg-gradient-to-br from-purple-500 via-pink-400 to-yellow-300"
-    >
-      {/* Search */}
+    <div dir="rtl" className="p-6 min-h-screen bg-gradient-to-br from-purple-500 via-pink-400 to-yellow-300">
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="ابحث عن منتج..."
         className="bg-white/80 p-3 rounded-full w-full max-w-sm mb-6 mt-16"
       />
-
-      {/* Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {loading
           ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
           : filtered.map((p, index) => (
-              <ProductCard key={p.id} p={p} onAdd={handleAdd} eager={index < 8} />
+              <ProductCard key={p.id} p={p} onAdd={handleAdd} onImageClick={handleImageClick} eager={index < 8} />
             ))}
       </div>
     </div>
