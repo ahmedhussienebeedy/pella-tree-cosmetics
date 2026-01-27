@@ -18,7 +18,6 @@ export default function CartPage() {
     increaseQty,
     decreaseQuantity,
     removeItem,
-    clearCart,
     addToCart
   } = useCart();
 
@@ -33,12 +32,11 @@ export default function CartPage() {
     address: "",
   });
 
-  // تحميل السلة من localStorage لو context فاضي
+  /* تحميل السلة من localStorage لو context فاضي */
   useEffect(() => {
     const savedCart = localStorage.getItem("cart");
     if (savedCart && cart.length === 0) {
-      const parsed = JSON.parse(savedCart);
-      parsed.forEach(p => addToCartFromStorage(p));
+      JSON.parse(savedCart).forEach(p => addToCartFromStorage(p));
     }
   }, []);
 
@@ -57,6 +55,7 @@ export default function CartPage() {
     }
   };
 
+  /* ---------- Place Order ---------- */
   const handlePlaceOrder = async () => {
     const finalCity = userInfo.customCity || userInfo.city;
 
@@ -94,11 +93,6 @@ export default function CartPage() {
       status: "جديد",
     };
 
-    // ✅ انتقال فوري لصفحة النجاح
-    clearCart();
-    navigate("/order-success", { replace: true });
-
-    // 🔥 حفظ الأوردر في الخلفية
     try {
       const counterRef = ref(database, "ordersCounter");
       const snapshot = await get(counterRef);
@@ -112,8 +106,13 @@ export default function CartPage() {
       });
 
       await set(counterRef, newNumber);
+
+      // ✅ بعد نجاح الحفظ روح صفحة orders
+      navigate("/order-success");
+
     } catch (err) {
       console.error("Order save failed:", err);
+      alert("حصل خطأ أثناء حفظ الطلب");
     }
   };
 
@@ -123,41 +122,39 @@ export default function CartPage() {
 
       {/* بيانات العميل */}
       <div className="bg-white rounded-2xl shadow-xl p-5 mb-6 space-y-3">
-        <input type="text" placeholder="الاسم بالكامل" value={userInfo.name}
-          onChange={(e)=>setUserInfo({...userInfo,name:e.target.value})}
-          className="border p-2 rounded-lg w-full"/>
+        <input className="border p-2 rounded-lg w-full" placeholder="الاسم بالكامل"
+          value={userInfo.name} onChange={(e)=>setUserInfo({...userInfo,name:e.target.value})} />
 
-        <input type="text" placeholder="رقم الهاتف" value={userInfo.phone}
-          onChange={(e)=>setUserInfo({...userInfo,phone:e.target.value})}
-          className="border p-2 rounded-lg w-full"/>
+        <input className="border p-2 rounded-lg w-full" placeholder="رقم الهاتف"
+          value={userInfo.phone} onChange={(e)=>setUserInfo({...userInfo,phone:e.target.value})} />
 
-        <select value={userInfo.country}
-          onChange={(e)=>setUserInfo({...userInfo,country:e.target.value,city:"",customCity:""})}
-          className="border p-2 rounded-lg w-full">
+        <select className="border p-2 rounded-lg w-full"
+          value={userInfo.country}
+          onChange={(e)=>setUserInfo({...userInfo,country:e.target.value,city:"",customCity:""})}>
           <option value="">اختر الدولة</option>
-          {Object.keys(countriesData).map(c=><option key={c} value={c}>{c}</option>)}
+          {Object.keys(countriesData).map(c=>(
+            <option key={c}>{c}</option>
+          ))}
         </select>
 
         {userInfo.country && (
-          <select value={userInfo.city}
-            onChange={(e)=>setUserInfo({...userInfo,city:e.target.value})}
-            className="border p-2 rounded-lg w-full">
+          <select className="border p-2 rounded-lg w-full"
+            value={userInfo.city}
+            onChange={(e)=>setUserInfo({...userInfo,city:e.target.value})}>
             <option value="">اختر المدينة</option>
-            {countriesData[userInfo.country].map(city=>
-              <option key={city} value={city}>{city}</option>
-            )}
+            {countriesData[userInfo.country].map(city=>(
+              <option key={city}>{city}</option>
+            ))}
           </select>
         )}
 
-        <input type="text" placeholder="أو اكتب اسم المدينة يدويًا"
+        <input className="border p-2 rounded-lg w-full" placeholder="أو اكتب المدينة يدويًا"
           value={userInfo.customCity}
-          onChange={(e)=>setUserInfo({...userInfo,customCity:e.target.value})}
-          className="border p-2 rounded-lg w-full"/>
+          onChange={(e)=>setUserInfo({...userInfo,customCity:e.target.value})} />
 
-        <textarea placeholder="العنوان بالتفصيل" rows={3}
+        <textarea rows={3} className="border p-2 rounded-lg w-full" placeholder="العنوان بالتفصيل"
           value={userInfo.address}
-          onChange={(e)=>setUserInfo({...userInfo,address:e.target.value})}
-          className="border p-2 rounded-lg w-full"/>
+          onChange={(e)=>setUserInfo({...userInfo,address:e.target.value})}/>
       </div>
 
       {/* المنتجات */}
@@ -168,31 +165,30 @@ export default function CartPage() {
           <div key={p.id} className="flex flex-col sm:flex-row justify-between border-b pb-3">
             <div>
               <h3 className="font-bold">{p.name}</h3>
-              <p className="text-sm text-gray-500">{p.price} جنيه × {p.quantity}</p>
+              <p className="text-sm text-gray-500">{p.price} × {p.quantity}</p>
             </div>
 
-            <div className="flex items-center gap-2 mt-2">
-              <button onClick={()=>decreaseQuantity(p.id)} className="w-8 h-8 rounded-full bg-red-100 text-red-600 font-bold">−</button>
-              <span className="font-bold">{p.quantity}</span>
-              <button onClick={()=>increaseQty(p.id)} className="w-8 h-8 rounded-full bg-green-100 text-green-600 font-bold">+</button>
+            <div className="flex gap-2 mt-2">
+              <button onClick={()=>decreaseQuantity(p.id)} className="w-8 h-8 bg-red-100 rounded-full">−</button>
+              <span>{p.quantity}</span>
+              <button onClick={()=>increaseQty(p.id)} className="w-8 h-8 bg-green-100 rounded-full">+</button>
             </div>
 
             <div className="text-right mt-2">
               <p className="font-bold">{(p.price*p.quantity).toFixed(2)} ج</p>
-              <button onClick={()=>removeItem(p.id)} className="text-red-500 text-sm hover:underline">حذف</button>
+              <button onClick={()=>removeItem(p.id)} className="text-red-500 text-sm">حذف</button>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="bg-white rounded-xl shadow p-4 mb-4 flex justify-between font-bold text-lg">
+      <div className="bg-white rounded-xl shadow p-4 mb-4 flex justify-between font-bold">
         <span>الإجمالي:</span>
         <span>{totalPrice.toFixed(2)} جنيه</span>
       </div>
 
-      <button
-        onClick={handlePlaceOrder}
-        className="w-full bg-green-600 text-white py-4 rounded-2xl text-lg font-bold hover:bg-green-700 transition">
+      <button onClick={handlePlaceOrder}
+        className="w-full bg-green-600 text-white py-4 rounded-2xl text-lg font-bold">
         تأكيد الطلب
       </button>
     </div>
