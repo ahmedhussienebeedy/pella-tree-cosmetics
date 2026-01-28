@@ -27,13 +27,24 @@ export default function DashProducts() {
     await remove(ref(database, `products/${id}`));
   };
 
-  // ✏️ Update
+  // ✏️ Update (FIXED)
   const handleUpdate = async () => {
-    if (!editProduct) return;
+    if (!editProduct?.id) return;
 
-    const { id, ...updatedData } = editProduct;
-    await update(ref(database, `products/${id}`), updatedData);
-    setEditProduct(null);
+    try {
+      const { id, ...updatedData } = editProduct;
+
+      await update(ref(database, `products/${id}`), {
+        ...updatedData,
+        price: Number(updatedData.price),
+      });
+
+      setEditProduct(null);
+      alert("✅ Product updated");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Update failed");
+    }
   };
 
   return (
@@ -92,10 +103,14 @@ export default function DashProducts() {
             />
 
             <input
+              type="number"
               className="w-full border p-2 mb-2"
               value={editProduct.price}
               onChange={(e) =>
-                setEditProduct({ ...editProduct, price: e.target.value })
+                setEditProduct({
+                  ...editProduct,
+                  price: Number(e.target.value),
+                })
               }
               placeholder="Price"
             />

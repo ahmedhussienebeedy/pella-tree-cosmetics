@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { database } from "../../firebase";
-import { ref, query, orderByChild, limitToFirst, onValue } from "firebase/database";
+import { ref, query, orderByChild, limitToFirst, onValue, get } from "firebase/database";
 import { FaShoppingCart, FaTimes } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import React from "react";
@@ -68,6 +68,7 @@ const ProductCard = React.memo(function ProductCard({ p, onAdd, onImageClick, ea
       <img
         src={p.image}
         loading={eager ? "eager" : "lazy"}
+        decoding="async"
         className="w-full h-40 object-cover rounded-xl mb-2 cursor-pointer"
         onClick={() => onImageClick(p)}
       />
@@ -186,14 +187,36 @@ export default function Products() {
 function ProductsContent({ products, setProducts, search, setSearch, setSelectedProduct }) {
   const { addToCart } = useCart();
 
+  // load من cache
+  useEffect(() => {
+    const cached = localStorage.getItem("products");
+    if (cached) setProducts(JSON.parse(cached));
+  }, []);
+
   useEffect(() => {
     const q = query(ref(database, "products"), orderByChild("name"), limitToFirst(20));
-    return onValue(q, (snap) => {
+
+    // أول مرة سريع
+    get(q).then((snap) => {
       if (snap.exists()) {
         const data = snap.val();
-        setProducts(Object.keys(data).map((k) => ({ id: k, ...data[k] })));
+        const list = Object.keys(data).map((k) => ({ id: k, ...data[k] }));
+        setProducts(list);
+        localStorage.setItem("products", JSON.stringify(list));
       }
     });
+
+    // realtime بعد كده
+    const unsub = onValue(q, (snap) => {
+      if (snap.exists()) {
+        const data = snap.val();
+        const list = Object.keys(data).map((k) => ({ id: k, ...data[k] }));
+        setProducts(list);
+        localStorage.setItem("products", JSON.stringify(list));
+      }
+    });
+
+    return () => unsub();
   }, []);
 
   const filtered = useMemo(() => {
@@ -203,7 +226,12 @@ function ProductsContent({ products, setProducts, search, setSearch, setSelected
 
   return (
     <div dir="rtl" className="p-6 bg-gradient-to-br from-purple-500 via-pink-400 to-yellow-300 min-h-screen">
-      <input value={search} onChange={(e) => setSearch(e.target.value)} className="bg-white p-3 rounded-full w-full mb-6 mt-16" placeholder="ابحث..." />
+      <input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="bg-white p-3 rounded-full w-full mb-6 mt-16"
+        placeholder="ابحث..."
+      />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {filtered.map((p, i) => (
