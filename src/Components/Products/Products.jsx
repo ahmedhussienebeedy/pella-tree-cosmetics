@@ -26,11 +26,13 @@ export function CartProvider({ children }) {
 
   const addToCart = (product) => {
     const existing = cart.find((p) => p.id === product.id);
+
     if (existing) {
       setCart(cart.map((p) => (p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p)));
     } else {
       setCart([...cart, { ...product, quantity: 1 }]);
     }
+
     setIsCartOpen(true);
   };
 
@@ -39,6 +41,7 @@ export function CartProvider({ children }) {
   const decreaseQuantity = (id) => {
     const existing = cart.find((p) => p.id === id);
     if (!existing) return;
+
     if (existing.quantity === 1) removeFromCart(id);
     else setCart(cart.map((p) => (p.id === id ? { ...p, quantity: p.quantity - 1 } : p)));
   };
@@ -55,7 +58,18 @@ export function CartProvider({ children }) {
   };
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, decreaseQuantity, increaseQty, totalPrice, isCartOpen, setIsCartOpen, goToCart }}>
+    <CartContext.Provider
+      value={{
+        cart,
+        addToCart,
+        decreaseQuantity,
+        increaseQty,
+        totalPrice,
+        isCartOpen,
+        setIsCartOpen,
+        goToCart,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
@@ -79,10 +93,7 @@ const ProductCard = React.memo(function ProductCard({ p, onAdd, onImageClick, ea
       <div className="mt-3 flex justify-between">
         <p className="font-bold text-pink-600">EGP {p.price}</p>
 
-        <button
-          onClick={() => onAdd(p)}
-          className="bg-purple-600 text-white px-3 py-1 rounded-full flex gap-1"
-        >
+        <button onClick={() => onAdd(p)} className="bg-purple-600 text-white px-3 py-1 rounded-full flex gap-1">
           <FaShoppingCart /> أضف
         </button>
       </div>
@@ -100,12 +111,7 @@ function CartSidebar() {
         <>
           <motion.div onClick={() => setIsCartOpen(false)} className="fixed inset-0 bg-black/40 z-40" />
 
-          <motion.div
-            className="fixed top-0 right-0 h-full w-80 bg-white z-50 p-4"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-          >
+          <motion.div className="fixed top-0 right-0 h-full w-80 bg-white z-50 p-4" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}>
             <div className="flex justify-between mb-4">
               <h2 className="font-bold">السلة</h2>
               <FaTimes onClick={() => setIsCartOpen(false)} />
@@ -115,7 +121,9 @@ function CartSidebar() {
               <div key={item.id} className="flex justify-between mb-3">
                 <div>
                   <p>{item.name}</p>
-                  <p className="text-sm">{item.quantity} × {item.price}</p>
+                  <p className="text-sm">
+                    {item.quantity} × {item.price}
+                  </p>
                 </div>
 
                 <div className="flex gap-2">
@@ -159,7 +167,14 @@ function ProductOverlay({ product, onClose }) {
           <p className="text-gray-600 my-2">{product.description}</p>
           <p className="font-bold text-pink-600 mb-3">EGP {product.price}</p>
 
-          <button onClick={() => addToCart(product)} className="w-full bg-purple-600 text-white py-2 rounded-xl">
+          <button
+            onClick={() => {
+              addToCart(product);
+              onClose();
+              alert("✅ تم إضافة المنتج للسلة");
+            }}
+            className="w-full bg-purple-600 text-white py-2 rounded-xl"
+          >
             أضف للسلة
           </button>
         </motion.div>
@@ -187,7 +202,6 @@ export default function Products() {
 function ProductsContent({ products, setProducts, search, setSearch, setSelectedProduct }) {
   const { addToCart } = useCart();
 
-  // load من cache
   useEffect(() => {
     const cached = localStorage.getItem("products");
     if (cached) setProducts(JSON.parse(cached));
@@ -196,7 +210,6 @@ function ProductsContent({ products, setProducts, search, setSearch, setSelected
   useEffect(() => {
     const q = query(ref(database, "products"), orderByChild("name"), limitToFirst(20));
 
-    // أول مرة سريع
     get(q).then((snap) => {
       if (snap.exists()) {
         const data = snap.val();
@@ -206,7 +219,6 @@ function ProductsContent({ products, setProducts, search, setSearch, setSelected
       }
     });
 
-    // realtime بعد كده
     const unsub = onValue(q, (snap) => {
       if (snap.exists()) {
         const data = snap.val();
@@ -226,12 +238,7 @@ function ProductsContent({ products, setProducts, search, setSearch, setSelected
 
   return (
     <div dir="rtl" className="p-6 bg-gradient-to-br from-purple-500 via-pink-400 to-yellow-300 min-h-screen">
-      <input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="bg-white p-3 rounded-full w-full mb-6 mt-16"
-        placeholder="ابحث..."
-      />
+      <input value={search} onChange={(e) => setSearch(e.target.value)} className="bg-white p-3 rounded-full w-full mb-6 mt-16" placeholder="ابحث..." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {filtered.map((p, i) => (
